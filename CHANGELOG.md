@@ -1,5 +1,11 @@
 # @changesets/action
 
+## 2.1.0
+
+### Minor Changes
+
+- [`daab23b`](https://github.com/changesets/action/commit/daab23bbf569ca1e0fd1ddd405f6cdd01e9375dc) Thanks [@Rugvip](https://github.com/Rugvip)! - Format changelog with prettier if available.
+
 ## 2.0.0
 
 ### Major Changes
