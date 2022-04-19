@@ -240,7 +240,7 @@ export async function runVersion({
       };
     })
   );
-  const changelogBody = `
+  let changelogBody = `
 # Release v${releaseVersion}
 
 ${changelogEntries
@@ -252,9 +252,19 @@ ${changelogEntries
 
   const changelogPath = `docs/releases/v${releaseVersion}-changelog.md`;
 
-  const prBody = `See [${changelogPath}](https://github.com/backstage/backstage/blob/master/${changelogPath}) for more information.`;
+  try {
+    const prettier = require(resolveFrom(cwd, "prettier"));
+    const prettierConfig = await prettier.resolveConfig(cwd);
+    changelogBody = prettier.format(changelogBody, {
+      ...prettierConfig,
+      parser: "markdown",
+    });
+  } catch {}
 
   await fs.writeFile(changelogPath, changelogBody);
+
+  const prBody = `See [${changelogPath}](https://github.com/backstage/backstage/blob/master/${changelogPath}) for more information.`;
+
   const finalPrTitle = `${prTitle}${!!preState ? ` (${preState.tag})` : ""}`;
 
   // project with `commit: true` setting could have already committed files
