@@ -219,55 +219,42 @@ export async function runVersion({
   });
   let changedPackages = await getChangedPackages(cwd, versionsByDirectory);
 
-  let prBodyPromise = (async () => {
-    return (
-      `This PR was opened by the [Changesets release](https://github.com/changesets/action) GitHub action. When you're ready to do a release, you can merge this and ${
-        hasPublishScript
-          ? `the packages will be published to npm automatically`
-          : `publish to npm yourself or [setup this action to publish automatically](https://github.com/changesets/action#with-publishing)`
-      }. If you're not ready to do a release yet, that's fine, whenever you add more changesets to ${branch}, this PR will be updated.
-${
-  !!preState
-    ? `
-⚠️⚠️⚠️⚠️⚠️⚠️
+  const { version: releaseVersion } = await fs.readJson(
+    path.resolve(cwd, "package.json")
+  );
 
-\`${branch}\` is currently in **pre mode** so this branch has prereleases rather than normal releases. If you want to exit prereleases, run \`changeset pre exit\` on \`${branch}\`.
+  const changelogEntries = await Promise.all(
+    changedPackages.map(async (pkg) => {
+      let changelogContents = await fs.readFile(
+        path.join(pkg.dir, "CHANGELOG.md"),
+        "utf8"
+      );
 
-⚠️⚠️⚠️⚠️⚠️⚠️
-`
-    : ""
-}
-# Releases
-` +
-      (
-        await Promise.all(
-          changedPackages.map(async (pkg) => {
-            let changelogContents = await fs.readFile(
-              path.join(pkg.dir, "CHANGELOG.md"),
-              "utf8"
-            );
+      let entry = getChangelogEntry(changelogContents, pkg.packageJson.version);
+      return {
+        highestLevel: entry.highestLevel,
+        private: !!pkg.packageJson.private,
+        content:
+          `## ${pkg.packageJson.name}@${pkg.packageJson.version}\n\n` +
+          entry.content,
+      };
+    })
+  );
+  const changelogBody = `
+# Release v${releaseVersion}
 
-            let entry = getChangelogEntry(
-              changelogContents,
-              pkg.packageJson.version
-            );
-            return {
-              highestLevel: entry.highestLevel,
-              private: !!pkg.packageJson.private,
-              content:
-                `## ${pkg.packageJson.name}@${pkg.packageJson.version}\n\n` +
-                entry.content,
-            };
-          })
-        )
-      )
-        .filter((x) => x)
-        .sort(sortTheThings)
-        .map((x) => x.content)
-        .join("\n ")
-    );
-  })();
+${changelogEntries
+  .filter((x) => x)
+  .sort(sortTheThings)
+  .map((x) => x.content)
+  .join("\n")}
+`;
 
+  const changelogPath = `docs/releases/v${releaseVersion}-changelog.md`;
+
+  const prBody = `See [${changelogPath}](https://github.com/backstage/backstage/blob/master/${changelogPath}) for more information.`;
+
+  await fs.writeFile(changelogPath, changelogBody);
   const finalPrTitle = `${prTitle}${!!preState ? ` (${preState.tag})` : ""}`;
 
   // project with `commit: true` setting could have already committed files
@@ -290,7 +277,7 @@ ${
       base: branch,
       head: versionBranch,
       title: finalPrTitle,
-      body: await prBodyPromise,
+      body: prBody,
       ...github.context.repo,
     });
 
@@ -301,7 +288,7 @@ ${
     await octokit.pulls.update({
       pull_number: searchResult.data.items[0].number,
       title: finalPrTitle,
-      body: await prBodyPromise,
+      body: prBody,
       ...github.context.repo,
     });
     console.log("pull request found");
