@@ -243,6 +243,8 @@ export async function runVersion({
   let changelogBody = `
 # Release v${releaseVersion}
 
+Upgrade Helper: [https://backstage.github.io/upgrade-helper/?to=${releaseVersion}](https://backstage.github.io/upgrade-helper/?to=${releaseVersion})
+
 ${changelogEntries
   .filter((x) => x)
   .sort(sortTheThings)
