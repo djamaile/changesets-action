@@ -1,3 +1,4 @@
+// test
 import { exec } from "@actions/exec";
 import * as github from "@actions/github";
 import fs from "fs-extra";
