@@ -226,7 +226,7 @@ export async function runVersion({
   const { version: versionFromPackageJson } = await fs.readJson(
     path.resolve(cwd, "package.json")
   );
-  const toUseReleaseVersion = releaseVersion ?? versionFromPackageJson;
+  const toUseReleaseVersion = releaseVersion || versionFromPackageJson;
 
   const changelogEntries = await Promise.all(
     changedPackages.map(async (pkg) => {
