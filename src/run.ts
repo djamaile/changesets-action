@@ -223,9 +223,10 @@ export async function runVersion({
   });
   let changedPackages = await getChangedPackages(cwd, versionsByDirectory);
 
-  releaseVersion = releaseVersion ? releaseVersion : await fs.readJson(
+  const versionFromPackageJson = const { version: releaseVersion } = await fs.readJson(
     path.resolve(cwd, "package.json")
   );
+  const toUseReleaseVersion = releaseVersion ?? versionFromPackageJson;
 
   const changelogEntries = await Promise.all(
     changedPackages.map(async (pkg) => {
@@ -245,9 +246,9 @@ export async function runVersion({
     })
   );
   let changelogBody = `
-# Release v${releaseVersion}
+# Release v${toUseReleaseVersion}
 
-Upgrade Helper: [https://backstage.github.io/upgrade-helper/?to=${releaseVersion}](https://backstage.github.io/upgrade-helper/?to=${releaseVersion})
+Upgrade Helper: [https://backstage.github.io/upgrade-helper/?to=${toUseReleaseVersion}](https://backstage.github.io/upgrade-helper/?to=${toUseReleaseVersion})
 
 ${changelogEntries
   .filter((x) => x)
@@ -268,7 +269,9 @@ ${changelogEntries
     });
   } catch {}
 
-  await fs.writeFile(fullChangelogPath, changelogBody);
+  console.log('fullChangelogPath', fullChangelogPath);
+
+  // await fs.writeFile(fullChangelogPath, changelogBody);
 
   const prBody = `See [${fullChangelogPath}](https://github.com/backstage/backstage/blob/master/${fullChangelogPath}) for more information.`;
 
