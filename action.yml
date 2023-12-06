@@ -34,7 +34,6 @@ inputs:
   changelogPath:
     description: The path of where the changelog file will be created
     required: false
-    default: docs/releases
 outputs:
   published:
     description: A boolean value to indicate whether a publishing is happened or not
