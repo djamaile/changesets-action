@@ -223,7 +223,7 @@ export async function runVersion({
   });
   let changedPackages = await getChangedPackages(cwd, versionsByDirectory);
 
-  const versionFromPackageJson = const { version: releaseVersion } = await fs.readJson(
+  const { version: versionFromPackageJson } = await fs.readJson(
     path.resolve(cwd, "package.json")
   );
   const toUseReleaseVersion = releaseVersion ?? versionFromPackageJson;
