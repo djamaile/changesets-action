@@ -269,9 +269,7 @@ ${changelogEntries
     });
   } catch {}
 
-  console.log('fullChangelogPath', fullChangelogPath);
-
-  // await fs.writeFile(fullChangelogPath, changelogBody);
+  await fs.writeFile(fullChangelogPath, changelogBody);
 
   const prBody = `See [${fullChangelogPath}](https://github.com/backstage/backstage/blob/master/${fullChangelogPath}) for more information.`;
 
