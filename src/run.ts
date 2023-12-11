@@ -256,6 +256,8 @@ export async function runVersion({
   let changelogBody = `
 # Release v${toUseReleaseVersion}
 
+${JSON.stringify(changelogEntries)}
+
 ${changelogEntries
   .filter((x) => x)
   .sort(sortTheThings)
