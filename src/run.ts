@@ -183,6 +183,14 @@ type RunVersionResult = {
   pullRequestNumber: number;
 };
 
+function splitAndCapitalize(str: string) {
+  let words = str.split('-');
+  words.shift();
+  return words
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(' ');
+}
+
 export async function runVersion({
   script,
   githubToken,
@@ -240,16 +248,13 @@ export async function runVersion({
         highestLevel: entry.highestLevel,
         private: !!pkg.packageJson.private,
         content:
-          `## ${pkg.packageJson.name}@${pkg.packageJson.version}\n\n` +
+          `## ${splitAndCapitalize(pkg.packageJson.name)}\n\n` +
           entry.content,
       };
     })
   );
   let changelogBody = `
-  Djamaile Test
 # Release v${toUseReleaseVersion}
-
-Upgrade Helper: [https://backstage.github.io/upgrade-helper/?to=${toUseReleaseVersion}](https://backstage.github.io/upgrade-helper/?to=${toUseReleaseVersion})
 
 ${changelogEntries
   .filter((x) => x)
