@@ -253,17 +253,45 @@ export async function runVersion({
       };
     })
   );
+
+  const bugFixes = changelogEntries.filter(c => c.content.includes('Patch'));
+const features = changelogEntries.filter(c => c.content.includes('Major'));
+const createBugFixedMarkdown = () => {
+    return `
+      ## Bug fixes
+      ${bugFixes.map(b => {
+        const match = b.content.match(/##\s*([^\n]+)/);;
+        const pluginName = match ? match[1] : null;
+        const changes = b.content.split("Changes");
+        return(`
+          ### ${pluginName}\n\n
+
+          ${changes[1].trim()}
+        `)
+      })}
+    `;
+};
+const createFeatureMarkDown = () => {
+        return `
+      ## Features
+      ${features.map(b => {
+        const match = b.content.match(/##\s*([^\n]+)/);
+        const pluginName = match ? match[1] : null;
+        const changes = b.content.split("Changes");
+        return(`
+          ### ${pluginName}\n\n
+
+          ${changes[1].trim()}
+        `)
+      })}
+    `;
+};
   let changelogBody = `
 # Release v${toUseReleaseVersion}
 
-${JSON.stringify(changelogEntries)}
-
-${changelogEntries
-  .filter((x) => x)
-  .sort(sortTheThings)
-  .map((x) => x.content)
-  .join("\n")}
+${createFeatureMarkDown() + '\n\n' + createBugFixedMarkdown()}
 `;
+
 
   const file = `v${releaseVersion}-changelog.md`;
   const fullChangelogPath = `${changelogPath}/${file}`;
