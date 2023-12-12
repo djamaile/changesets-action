@@ -262,6 +262,7 @@ const createBugFixedMarkdown = () => {
       ${bugFixes.map(b => {
         const match = b.content.match(/##\s*([^\n]+)/);;
         const pluginName = match ? match[1] : null;
+        if(pluginName === null) return;
         const changes = b.content.split("Changes");
         return(`
           ### ${pluginName}\n\n
