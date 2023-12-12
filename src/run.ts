@@ -254,43 +254,67 @@ export async function runVersion({
     })
   );
 
-  const bugFixes = changelogEntries.filter(c => c.content.includes('Patch'));
-const features = changelogEntries.filter(c => c.content.includes('Major'));
-const createBugFixedMarkdown = () => {
-    return `
-      ## Bug fixes
-      ${bugFixes.map(b => {
-        const match = b.content.match(/##\s*([^\n]+)/);;
-        const pluginName = match ? match[1] : null;
-        const changes = b.content.split("Changes");
-        return(`
-          ### ${pluginName}\n\n
+  function splitContent(content: string, existingObj: Record<string, {major: string, patch: string}>) {
+    const pluginName = content.split('\n')[0].replace('## ', '').trim();
+    const majorIndex = content.indexOf('Major Changes');
+    const patchIndex = content.indexOf('Patch Changes');
+    
+    let major = '', patch = '';
+  
+    // Check if Major Changes is present
+    if (majorIndex !== -1) {
+      if (patchIndex !== -1) {
+        major = content.slice(majorIndex, patchIndex).trim().replace("###", '');
+      } else {
+        major = content.slice(majorIndex).trim();
+      }
+    }
+  
+    // Check if Patch Changes is present
+    if (patchIndex !== -1) {
+      patch = content.slice(patchIndex).trim();
+    }
+  
+    // Set the properties in the existing object
+    existingObj[pluginName] = {
+      major,
+      patch
+    };
+  }
+  const pluginChanges: Record<string, {major: string, patch: string}> = {};
+  for(const item of changelogEntries){
+    splitContent(item.content, pluginChanges);
+  }
+  const features: string[] = [];
+  const bugfixes: string[] = [];
+  for(const [pluginName, changes] of Object.entries(pluginChanges)){
+    const majorChanges = changes.major;
+    const patchChanges = changes.patch;
+    if(changes.major !== ''){
+      features.push(`
+         ### ${pluginName}
+         ${majorChanges.split("Changes")[1].trim()}
+      `);
+    }
+    if(changes.patch !== ''){
+      bugfixes.push(`
+         ### ${pluginName}
+         ${patchChanges.split("Changes")[1].trim()}
+      `);
+    }
+  }
 
-          ${changes[1].trim()}
-        `)
-      })}
-    `;
-};
-const createFeatureMarkDown = () => {
-        return `
-      ## Features
-      ${features.map(b => {
-        const match = b.content.match(/##\s*([^\n]+)/);
-        const pluginName = match ? match[1] : null;
-        const changes = b.content.split("Changes");
-        return(`
-          ### ${pluginName}\n\n
-
-          ${changes[1].trim()}
-        `)
-      })}
-    `;
-};
-
-const markdown = createFeatureMarkDown() + '\n\n' + createBugFixedMarkdown();
-const lines = markdown.split('\n');
-const trimmedLines = lines.map(line => line.trimStart());
-const alignedMarkdown = trimmedLines.join('\n');
+  const markdown = `
+  ## Features
+  ${features}
+  
+  ## Bug fixes
+  ${bugfixes}
+  `;
+  
+  const lines = markdown.split('\n');
+  const trimmedLines = lines.map(line => line.trimStart());
+  const alignedMarkdown = trimmedLines.join('\n');
 
   let changelogBody = `
 # Release v${toUseReleaseVersion}
