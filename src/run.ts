@@ -262,7 +262,6 @@ const createBugFixedMarkdown = () => {
       ${bugFixes.map(b => {
         const match = b.content.match(/##\s*([^\n]+)/);;
         const pluginName = match ? match[1] : null;
-        if(pluginName === null) return;
         const changes = b.content.split("Changes");
         return(`
           ### ${pluginName}\n\n
@@ -287,10 +286,16 @@ const createFeatureMarkDown = () => {
       })}
     `;
 };
+
+const markdown = createFeatureMarkDown() + '\n\n' + createBugFixedMarkdown();
+const lines = markdown.split('\n');
+const trimmedLines = lines.map(line => line.trimStart());
+const alignedMarkdown = trimmedLines.join('\n');
+
   let changelogBody = `
 # Release v${toUseReleaseVersion}
 
-${createFeatureMarkDown() + '\n\n' + createBugFixedMarkdown()}
+${alignedMarkdown}
 `;
 
 
