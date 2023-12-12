@@ -339,7 +339,7 @@ ${alignedMarkdown}
 
   await fs.writeFile(fullChangelogPath, changelogBody);
 
-  const prBody = `See [${fullChangelogPath}](https://github.com/backstage/backstage/blob/master/${fullChangelogPath}) for more information.\n\n}`;
+  const prBody = `See [${fullChangelogPath}](https://github.com/backstage/backstage/blob/master/${fullChangelogPath}) for more information.\n\n`;
 
   const finalPrTitle = `${prTitle}${!!preState ? ` (${preState.tag})` : ""}`;
 
