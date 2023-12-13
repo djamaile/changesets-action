@@ -183,6 +183,14 @@ type RunVersionResult = {
   pullRequestNumber: number;
 };
 
+function splitAndCapitalize(str: string) {
+  let words = str.split('-');
+  words.shift();
+  return words
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(' ');
+}
+
 export async function runVersion({
   script,
   githubToken,
@@ -240,23 +248,80 @@ export async function runVersion({
         highestLevel: entry.highestLevel,
         private: !!pkg.packageJson.private,
         content:
-          `## ${pkg.packageJson.name}@${pkg.packageJson.version}\n\n` +
+          `## ${splitAndCapitalize(pkg.packageJson.name)}\n\n` +
           entry.content,
       };
     })
   );
+
+  function splitContent(content: string, existingObj: Record<string, {major: string, patch: string}>) {
+    const pluginName = content.split('\n')[0].replace('## ', '').trim();
+    const majorIndex = content.indexOf('Major Changes');
+    const patchIndex = content.indexOf('Patch Changes');
+    
+    let major = '', patch = '';
+  
+    // Check if Major Changes is present
+    if (majorIndex !== -1) {
+      if (patchIndex !== -1) {
+        major = content.slice(majorIndex, patchIndex).trim().replace("###", '');
+      } else {
+        major = content.slice(majorIndex).trim();
+      }
+    }
+  
+    // Check if Patch Changes is present
+    if (patchIndex !== -1) {
+      patch = content.slice(patchIndex).trim();
+    }
+  
+    // Set the properties in the existing object
+    existingObj[pluginName] = {
+      major,
+      patch
+    };
+  }
+  const pluginChanges: Record<string, {major: string, patch: string}> = {};
+  for(const item of changelogEntries){
+    splitContent(item.content, pluginChanges);
+  }
+  const features: string[] = [];
+  const bugfixes: string[] = [];
+  for(const [pluginName, changes] of Object.entries(pluginChanges)){
+    const majorChanges = changes.major;
+    const patchChanges = changes.patch;
+    if(changes.major !== ''){
+      features.push(`
+         ### ${pluginName}
+         ${majorChanges.split("Changes")[1].trim()}
+      `);
+    }
+    if(changes.patch !== ''){
+      bugfixes.push(`
+         ### ${pluginName}
+         ${patchChanges.split("Changes")[1].trim()}
+      `);
+    }
+  }
+
+  const markdown = `
+  ## Features
+  ${features.join('\n')}
+  
+  ## Bug fixes
+  ${bugfixes.join('\n')}
+  `;
+  
+  const lines = markdown.split('\n');
+  const trimmedLines = lines.map(line => line.trimStart());
+  const alignedMarkdown = trimmedLines.join('\n');
+
   let changelogBody = `
-  Djamaile Test
 # Release v${toUseReleaseVersion}
 
-Upgrade Helper: [https://backstage.github.io/upgrade-helper/?to=${toUseReleaseVersion}](https://backstage.github.io/upgrade-helper/?to=${toUseReleaseVersion})
-
-${changelogEntries
-  .filter((x) => x)
-  .sort(sortTheThings)
-  .map((x) => x.content)
-  .join("\n")}
+${alignedMarkdown}
 `;
+
 
   const file = `v${releaseVersion}-changelog.md`;
   const fullChangelogPath = `${changelogPath}/${file}`;
@@ -274,7 +339,7 @@ ${changelogEntries
 
   await fs.writeFile(fullChangelogPath, changelogBody);
 
-  const prBody = `See [${fullChangelogPath}](https://github.com/backstage/backstage/blob/master/${fullChangelogPath}) for more information.`;
+  const prBody = `See [${fullChangelogPath}](https://github.com/backstage/backstage/blob/master/${fullChangelogPath}) for more information.\n\n`;
 
   const finalPrTitle = `${prTitle}${!!preState ? ` (${preState.tag})` : ""}`;
 
